@@ -37,6 +37,8 @@ import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_auth
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as STokenRawRouteImport } from './routes/s/$token/raw'
 import { Route as STokenOgDotpngRouteImport } from './routes/s/$token/og[.]png'
+import { Route as ApiV1PageAuditRouteImport } from './routes/api/v1/page-audit'
+import { Route as ApiV1ContentQualityRouteImport } from './routes/api/v1/content-quality'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppSettingsOrganizationRouteImport } from './routes/_app/settings/organization'
@@ -44,6 +46,14 @@ import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
+import { Route as ApiV1SchemaValidateRouteImport } from './routes/api/v1/schema/validate'
+import { Route as ApiV1SchemaGenerateRouteImport } from './routes/api/v1/schema/generate'
+import { Route as ApiV1ProjectsEnsureRouteImport } from './routes/api/v1/projects/ensure'
+import { Route as ApiV1DriftHistoryRouteImport } from './routes/api/v1/drift/history'
+import { Route as ApiV1DriftCompareRouteImport } from './routes/api/v1/drift/compare'
+import { Route as ApiV1DriftChangesRouteImport } from './routes/api/v1/drift/changes'
+import { Route as ApiV1DriftBaselinesRouteImport } from './routes/api/v1/drift/baselines'
+import { Route as ApiV1AuditsResultsRouteImport } from './routes/api/v1/audits/results'
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as ApiGa4OauthCallbackRouteImport } from './routes/api/ga4/oauth/callback'
 import { Route as ProjectPProjectIdSettingsRouteImport } from './routes/_project/p/$projectId/settings'
@@ -210,6 +220,16 @@ const STokenOgDotpngRoute = STokenOgDotpngRouteImport.update({
   path: '/s/$token/og.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PageAuditRoute = ApiV1PageAuditRouteImport.update({
+  id: '/api/v1/page-audit',
+  path: '/api/v1/page-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ContentQualityRoute = ApiV1ContentQualityRouteImport.update({
+  id: '/api/v1/content-quality',
+  path: '/api/v1/content-quality',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAutumnSplatRoute = ApiAutumnSplatRouteImport.update({
   id: '/api/autumn/$',
   path: '/api/autumn/$',
@@ -244,6 +264,46 @@ const ProjectPProjectIdIndexRoute = ProjectPProjectIdIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ApiV1SchemaValidateRoute = ApiV1SchemaValidateRouteImport.update({
+  id: '/api/v1/schema/validate',
+  path: '/api/v1/schema/validate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SchemaGenerateRoute = ApiV1SchemaGenerateRouteImport.update({
+  id: '/api/v1/schema/generate',
+  path: '/api/v1/schema/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ProjectsEnsureRoute = ApiV1ProjectsEnsureRouteImport.update({
+  id: '/api/v1/projects/ensure',
+  path: '/api/v1/projects/ensure',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DriftHistoryRoute = ApiV1DriftHistoryRouteImport.update({
+  id: '/api/v1/drift/history',
+  path: '/api/v1/drift/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DriftCompareRoute = ApiV1DriftCompareRouteImport.update({
+  id: '/api/v1/drift/compare',
+  path: '/api/v1/drift/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DriftChangesRoute = ApiV1DriftChangesRouteImport.update({
+  id: '/api/v1/drift/changes',
+  path: '/api/v1/drift/changes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DriftBaselinesRoute = ApiV1DriftBaselinesRouteImport.update({
+  id: '/api/v1/drift/baselines',
+  path: '/api/v1/drift/baselines',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuditsResultsRoute = ApiV1AuditsResultsRouteImport.update({
+  id: '/api/v1/audits/results',
+  path: '/api/v1/audits/results',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
   id: '/api/gsc/oauth/callback',
@@ -421,6 +481,8 @@ export interface FileRoutesByFullPath {
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/v1/content-quality': typeof ApiV1ContentQualityRoute
+  '/api/v1/page-audit': typeof ApiV1PageAuditRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/settings/': typeof AppSettingsIndexRoute
@@ -442,6 +504,14 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRouteWithChildren
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
+  '/api/v1/audits/results': typeof ApiV1AuditsResultsRoute
+  '/api/v1/drift/baselines': typeof ApiV1DriftBaselinesRoute
+  '/api/v1/drift/changes': typeof ApiV1DriftChangesRoute
+  '/api/v1/drift/compare': typeof ApiV1DriftCompareRoute
+  '/api/v1/drift/history': typeof ApiV1DriftHistoryRoute
+  '/api/v1/projects/ensure': typeof ApiV1ProjectsEnsureRoute
+  '/api/v1/schema/generate': typeof ApiV1SchemaGenerateRoute
+  '/api/v1/schema/validate': typeof ApiV1SchemaValidateRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof ProjectPProjectIdReportsReportIdRoute
@@ -478,6 +548,8 @@ export interface FileRoutesByTo {
   '/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/v1/content-quality': typeof ApiV1ContentQualityRoute
+  '/api/v1/page-audit': typeof ApiV1PageAuditRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/settings': typeof AppSettingsIndexRoute
@@ -496,6 +568,14 @@ export interface FileRoutesByTo {
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
+  '/api/v1/audits/results': typeof ApiV1AuditsResultsRoute
+  '/api/v1/drift/baselines': typeof ApiV1DriftBaselinesRoute
+  '/api/v1/drift/changes': typeof ApiV1DriftChangesRoute
+  '/api/v1/drift/compare': typeof ApiV1DriftCompareRoute
+  '/api/v1/drift/history': typeof ApiV1DriftHistoryRoute
+  '/api/v1/projects/ensure': typeof ApiV1ProjectsEnsureRoute
+  '/api/v1/schema/generate': typeof ApiV1SchemaGenerateRoute
+  '/api/v1/schema/validate': typeof ApiV1SchemaValidateRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/reports/$reportId': typeof ProjectPProjectIdReportsReportIdRoute
@@ -539,6 +619,8 @@ export interface FileRoutesById {
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/v1/content-quality': typeof ApiV1ContentQualityRoute
+  '/api/v1/page-audit': typeof ApiV1PageAuditRoute
   '/s/$token/og.png': typeof STokenOgDotpngRoute
   '/s/$token/raw': typeof STokenRawRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
@@ -560,6 +642,14 @@ export interface FileRoutesById {
   '/_project/p/$projectId/settings': typeof ProjectPProjectIdSettingsRouteWithChildren
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
+  '/api/v1/audits/results': typeof ApiV1AuditsResultsRoute
+  '/api/v1/drift/baselines': typeof ApiV1DriftBaselinesRoute
+  '/api/v1/drift/changes': typeof ApiV1DriftChangesRoute
+  '/api/v1/drift/compare': typeof ApiV1DriftCompareRoute
+  '/api/v1/drift/history': typeof ApiV1DriftHistoryRoute
+  '/api/v1/projects/ensure': typeof ApiV1ProjectsEnsureRoute
+  '/api/v1/schema/generate': typeof ApiV1SchemaGenerateRoute
+  '/api/v1/schema/validate': typeof ApiV1SchemaValidateRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/_project/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/_project/p/$projectId/reports/$reportId': typeof ProjectPProjectIdReportsReportIdRoute
@@ -600,6 +690,8 @@ export interface FileRouteTypes {
     | '/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/v1/content-quality'
+    | '/api/v1/page-audit'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/settings/'
@@ -621,6 +713,14 @@ export interface FileRouteTypes {
     | '/p/$projectId/settings'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
+    | '/api/v1/audits/results'
+    | '/api/v1/drift/baselines'
+    | '/api/v1/drift/changes'
+    | '/api/v1/drift/compare'
+    | '/api/v1/drift/history'
+    | '/api/v1/projects/ensure'
+    | '/api/v1/schema/generate'
+    | '/api/v1/schema/validate'
     | '/p/$projectId/'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
@@ -657,6 +757,8 @@ export interface FileRouteTypes {
     | '/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/v1/content-quality'
+    | '/api/v1/page-audit'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/settings'
@@ -675,6 +777,14 @@ export interface FileRouteTypes {
     | '/p/$projectId/search-performance'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
+    | '/api/v1/audits/results'
+    | '/api/v1/drift/baselines'
+    | '/api/v1/drift/changes'
+    | '/api/v1/drift/compare'
+    | '/api/v1/drift/history'
+    | '/api/v1/projects/ensure'
+    | '/api/v1/schema/generate'
+    | '/api/v1/schema/validate'
     | '/p/$projectId'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/reports/$reportId'
@@ -717,6 +827,8 @@ export interface FileRouteTypes {
     | '/_app/settings/organization'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/v1/content-quality'
+    | '/api/v1/page-audit'
     | '/s/$token/og.png'
     | '/s/$token/raw'
     | '/_app/settings/'
@@ -738,6 +850,14 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/settings'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
+    | '/api/v1/audits/results'
+    | '/api/v1/drift/baselines'
+    | '/api/v1/drift/changes'
+    | '/api/v1/drift/compare'
+    | '/api/v1/drift/history'
+    | '/api/v1/projects/ensure'
+    | '/api/v1/schema/generate'
+    | '/api/v1/schema/validate'
     | '/_project/p/$projectId/'
     | '/_project/p/$projectId/rank-tracking/$configId'
     | '/_project/p/$projectId/reports/$reportId'
@@ -766,11 +886,21 @@ export interface RootRouteChildren {
   RReportIdRoute: typeof RReportIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
+  ApiV1ContentQualityRoute: typeof ApiV1ContentQualityRoute
+  ApiV1PageAuditRoute: typeof ApiV1PageAuditRoute
   STokenOgDotpngRoute: typeof STokenOgDotpngRoute
   STokenRawRoute: typeof STokenRawRoute
   STokenIndexRoute: typeof STokenIndexRoute
   ApiGa4OauthCallbackRoute: typeof ApiGa4OauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
+  ApiV1AuditsResultsRoute: typeof ApiV1AuditsResultsRoute
+  ApiV1DriftBaselinesRoute: typeof ApiV1DriftBaselinesRoute
+  ApiV1DriftChangesRoute: typeof ApiV1DriftChangesRoute
+  ApiV1DriftCompareRoute: typeof ApiV1DriftCompareRoute
+  ApiV1DriftHistoryRoute: typeof ApiV1DriftHistoryRoute
+  ApiV1ProjectsEnsureRoute: typeof ApiV1ProjectsEnsureRoute
+  ApiV1SchemaGenerateRoute: typeof ApiV1SchemaGenerateRoute
+  ApiV1SchemaValidateRoute: typeof ApiV1SchemaValidateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -971,6 +1101,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenOgDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/page-audit': {
+      id: '/api/v1/page-audit'
+      path: '/api/v1/page-audit'
+      fullPath: '/api/v1/page-audit'
+      preLoaderRoute: typeof ApiV1PageAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/content-quality': {
+      id: '/api/v1/content-quality'
+      path: '/api/v1/content-quality'
+      fullPath: '/api/v1/content-quality'
+      preLoaderRoute: typeof ApiV1ContentQualityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/autumn/$': {
       id: '/api/autumn/$'
       path: '/api/autumn/$'
@@ -1019,6 +1163,62 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/'
       preLoaderRoute: typeof ProjectPProjectIdIndexRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/api/v1/schema/validate': {
+      id: '/api/v1/schema/validate'
+      path: '/api/v1/schema/validate'
+      fullPath: '/api/v1/schema/validate'
+      preLoaderRoute: typeof ApiV1SchemaValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/schema/generate': {
+      id: '/api/v1/schema/generate'
+      path: '/api/v1/schema/generate'
+      fullPath: '/api/v1/schema/generate'
+      preLoaderRoute: typeof ApiV1SchemaGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/projects/ensure': {
+      id: '/api/v1/projects/ensure'
+      path: '/api/v1/projects/ensure'
+      fullPath: '/api/v1/projects/ensure'
+      preLoaderRoute: typeof ApiV1ProjectsEnsureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/drift/history': {
+      id: '/api/v1/drift/history'
+      path: '/api/v1/drift/history'
+      fullPath: '/api/v1/drift/history'
+      preLoaderRoute: typeof ApiV1DriftHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/drift/compare': {
+      id: '/api/v1/drift/compare'
+      path: '/api/v1/drift/compare'
+      fullPath: '/api/v1/drift/compare'
+      preLoaderRoute: typeof ApiV1DriftCompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/drift/changes': {
+      id: '/api/v1/drift/changes'
+      path: '/api/v1/drift/changes'
+      fullPath: '/api/v1/drift/changes'
+      preLoaderRoute: typeof ApiV1DriftChangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/drift/baselines': {
+      id: '/api/v1/drift/baselines'
+      path: '/api/v1/drift/baselines'
+      fullPath: '/api/v1/drift/baselines'
+      preLoaderRoute: typeof ApiV1DriftBaselinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/audits/results': {
+      id: '/api/v1/audits/results'
+      path: '/api/v1/audits/results'
+      fullPath: '/api/v1/audits/results'
+      preLoaderRoute: typeof ApiV1AuditsResultsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/gsc/oauth/callback': {
       id: '/api/gsc/oauth/callback'
@@ -1410,11 +1610,21 @@ const rootRouteChildren: RootRouteChildren = {
   RReportIdRoute: RReportIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
+  ApiV1ContentQualityRoute: ApiV1ContentQualityRoute,
+  ApiV1PageAuditRoute: ApiV1PageAuditRoute,
   STokenOgDotpngRoute: STokenOgDotpngRoute,
   STokenRawRoute: STokenRawRoute,
   STokenIndexRoute: STokenIndexRoute,
   ApiGa4OauthCallbackRoute: ApiGa4OauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
+  ApiV1AuditsResultsRoute: ApiV1AuditsResultsRoute,
+  ApiV1DriftBaselinesRoute: ApiV1DriftBaselinesRoute,
+  ApiV1DriftChangesRoute: ApiV1DriftChangesRoute,
+  ApiV1DriftCompareRoute: ApiV1DriftCompareRoute,
+  ApiV1DriftHistoryRoute: ApiV1DriftHistoryRoute,
+  ApiV1ProjectsEnsureRoute: ApiV1ProjectsEnsureRoute,
+  ApiV1SchemaGenerateRoute: ApiV1SchemaGenerateRoute,
+  ApiV1SchemaValidateRoute: ApiV1SchemaValidateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
