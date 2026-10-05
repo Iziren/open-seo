@@ -2,10 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AuditService } from "@/server/features/audit/services/AuditService";
+import { ContentQualityService } from "@/server/features/audit/services/ContentQualityService";
+import { PageAuditService } from "@/server/features/audit/services/PageAuditService";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
+  auditPageSchema,
   deleteAuditSchema,
+  gradeContentSchema,
   getAuditHistorySchema,
   getAuditResultsSchema,
   getAuditStatusSchema,
@@ -83,4 +87,54 @@ export const deleteAudit = createServerFn({ method: "POST" })
     requireOrgPermission(context, { project: ["delete"] });
     await AuditService.remove(data.auditId, context.projectId);
     return { success: true };
+  });
+
+export const auditPage = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(auditPageSchema)
+  .handler(async ({ data, context }) => {
+    const result = await PageAuditService.auditPage({
+      projectId: context.projectId,
+      url: data.url,
+    });
+
+    waitUntil(
+      captureServerEvent({
+        distinctId: context.userId,
+        event: "site_audit:page",
+        organizationId: context.organizationId,
+        properties: {
+          project_id: context.projectId,
+          content_score: result.contentScore,
+          schema_status: result.schemaStatus,
+          geo_score: result.geoScore,
+        },
+      }),
+    );
+
+    return result;
+  });
+
+export const gradeContent = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(gradeContentSchema)
+  .handler(async ({ data, context }) => {
+    const result = await ContentQualityService.gradeUrl({
+      projectId: context.projectId,
+      url: data.url,
+    });
+
+    waitUntil(
+      captureServerEvent({
+        distinctId: context.userId,
+        event: "site_audit:content-grade",
+        organizationId: context.organizationId,
+        properties: {
+          project_id: context.projectId,
+          overall: result.overall,
+        },
+      }),
+    );
+
+    return result;
   });

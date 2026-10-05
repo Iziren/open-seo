@@ -44,6 +44,16 @@ export const getCrawlProgressSchema = z.object({
   auditId: z.string().min(1),
 });
 
+export const auditPageSchema = z.object({
+  projectId: z.string().min(1),
+  url: z.string().min(1, "URL is required").max(2048),
+});
+
+export const gradeContentSchema = z.object({
+  projectId: z.string().min(1),
+  url: z.string().min(1, "URL is required").max(2048),
+});
+
 // ─── URL search params schema for /p/$projectId/audit ────────────────────────
 
 const auditTabs = ["issues", "pages", "performance"] as const;
@@ -51,4 +61,10 @@ const auditTabs = ["issues", "pages", "performance"] as const;
 export const auditSearchSchema = z.object({
   auditId: z.string().optional().catch(undefined),
   tab: z.enum(auditTabs).catch("issues").default("issues"),
+});
+
+// ─── URL search params schema for /p/$projectId/page-audit ───────────────────
+
+export const pageAuditSearchSchema = z.object({
+  url: z.string().optional().catch(undefined),
 });

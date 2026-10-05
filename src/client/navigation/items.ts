@@ -3,6 +3,7 @@ import {
   Bot,
   Brain,
   ClipboardCheck,
+  FileSearch,
   FileText,
   Globe,
   LayoutDashboard,
@@ -58,6 +59,11 @@ const projectNavItems = [
     to: "/p/$projectId/audit" as const,
     label: "Site Audit",
     icon: ClipboardCheck,
+  },
+  {
+    to: "/p/$projectId/page-audit" as const,
+    label: "Page Audit",
+    icon: FileSearch,
   },
   {
     to: "/p/$projectId/brand-lookup" as const,

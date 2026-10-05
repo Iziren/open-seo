@@ -11,6 +11,10 @@
     "src/router.tsx",
     "src/routes/**/*.ts",
     "src/routes/**/*.tsx",
+    // TanStack server functions: framework entry points invoked over HTTP by
+    // the router runtime (like routes). A function with no client importer is
+    // still a live endpoint, so absence of imports must not read as unused.
+    "src/serverFunctions/**/*.ts",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
     "drizzle-pg.config.ts",

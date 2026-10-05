@@ -22,6 +22,8 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import { getPageAuditTool } from "@/server/mcp/tools/get-page-audit";
+import { getContentQualityTool } from "@/server/mcp/tools/get-content-quality";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import { removeSavedKeywordsTool } from "@/server/mcp/tools/remove-saved-keywords";
 import { buildUpdateProjectContextTool } from "@/server/mcp/tools/project-context";
@@ -426,5 +428,7 @@ export function buildSamMcpTools(
     get_audit_status: waitingAuditStatusTool(adaptTool),
     get_audit_issues: adaptTool(getAuditIssuesTool),
     get_audit_pages: adaptTool(getAuditPagesTool),
+    get_page_audit: adaptTool(getPageAuditTool),
+    get_content_quality: adaptTool(getContentQualityTool),
   };
 }
