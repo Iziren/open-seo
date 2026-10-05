@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -190,8 +190,47 @@ async function getChangesForBaseline(input: {
     .limit(input.limit);
 }
 
+async function listBaselines(input: { projectId: string }) {
+  return db
+    .select()
+    .from(seoDriftBaselines)
+    .where(eq(seoDriftBaselines.projectId, input.projectId))
+    .orderBy(desc(seoDriftBaselines.createdAt));
+}
+
+/**
+ * Baselines due for the scheduled comparison: never compared, or last
+ * compared before the cutoff. ISO-text timestamps sort lexicographically on
+ * both dialects, so a plain `<` is correct. Capped per tick.
+ */
+async function getDueBaselines(input: { cutoffIso: string; limit: number }) {
+  return db
+    .select()
+    .from(seoDriftBaselines)
+    .where(
+      or(
+        isNull(seoDriftBaselines.lastComparedAt),
+        lt(seoDriftBaselines.lastComparedAt, input.cutoffIso),
+      ),
+    )
+    .limit(input.limit);
+}
+
+async function touchBaselineCompared(input: {
+  baselineId: string;
+  comparedAt: string;
+}) {
+  await db
+    .update(seoDriftBaselines)
+    .set({ lastComparedAt: input.comparedAt })
+    .where(eq(seoDriftBaselines.id, input.baselineId));
+}
+
 export const DriftRepository = {
   createBaseline,
+  listBaselines,
+  getDueBaselines,
+  touchBaselineCompared,
   getBaseline,
   insertSnapshots,
   getSnapshotsForBaseline,

@@ -6,6 +6,7 @@ import {
   FileSearch,
   FileText,
   Globe,
+  History,
   LayoutDashboard,
   Link2,
   MessageSquare,
@@ -64,6 +65,11 @@ const projectNavItems = [
     to: "/p/$projectId/page-audit" as const,
     label: "Page Audit",
     icon: FileSearch,
+  },
+  {
+    to: "/p/$projectId/drift" as const,
+    label: "Drift",
+    icon: History,
   },
   {
     to: "/p/$projectId/brand-lookup" as const,

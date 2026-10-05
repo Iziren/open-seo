@@ -89,6 +89,11 @@ import { getPageAuditTool } from "@/server/mcp/tools/get-page-audit";
 import { getContentQualityTool } from "@/server/mcp/tools/get-content-quality";
 import { generateSchemaTool } from "@/server/mcp/tools/generate-schema";
 import { getSchemaTool } from "@/server/mcp/tools/get-schema";
+import {
+  captureDriftBaselineTool,
+  compareDriftBaselineTool,
+  getDriftChangesTool,
+} from "@/server/mcp/tools/drift-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -235,6 +240,9 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getContentQualityTool);
   register(generateSchemaTool);
   register(getSchemaTool);
+  register(captureDriftBaselineTool);
+  register(compareDriftBaselineTool);
+  register(getDriftChangesTool);
   register(saveReportTool);
   register(listReportsTool);
   register(getReportTool);

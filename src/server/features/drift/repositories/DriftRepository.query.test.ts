@@ -41,7 +41,8 @@ beforeAll(async () => {
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
       name TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      last_compared_at TEXT
     );
     CREATE TABLE seo_drift_snapshots (
       id TEXT PRIMARY KEY,
@@ -266,5 +267,56 @@ describe("getSnapshotsForUrl", () => {
       limit: 1,
     });
     expect(limited.map((row) => row.id)).toEqual(["snap_new"]);
+  });
+});
+
+describe("listBaselines / getDueBaselines / touchBaselineCompared", () => {
+  it("lists newest-first scoped to the project", async () => {
+    await seedProject("proj_1");
+    await seedProject("proj_other");
+    await seedBaseline({
+      id: "old",
+      projectId: "proj_1",
+      createdAt: "2026-09-01T00:00:00.000Z",
+    });
+    await seedBaseline({
+      id: "new",
+      projectId: "proj_1",
+      createdAt: "2026-09-10T00:00:00.000Z",
+    });
+    await seedBaseline({ id: "other", projectId: "proj_other" });
+
+    const rows = await DriftRepository.listBaselines({ projectId: "proj_1" });
+    expect(rows.map((row) => row.id)).toEqual(["new", "old"]);
+  });
+
+  it("treats never-compared and stale baselines as due", async () => {
+    await seedProject("proj_1");
+    await seedBaseline({ id: "never", projectId: "proj_1" });
+    await seedBaseline({ id: "stale", projectId: "proj_1" });
+    await seedBaseline({ id: "fresh", projectId: "proj_1" });
+    await DriftRepository.touchBaselineCompared({
+      baselineId: "stale",
+      comparedAt: "2026-01-01T00:00:00.000Z",
+    });
+    await DriftRepository.touchBaselineCompared({
+      baselineId: "fresh",
+      comparedAt: "2026-09-20T00:00:00.000Z",
+    });
+
+    const due = await DriftRepository.getDueBaselines({
+      cutoffIso: "2026-09-15T00:00:00.000Z",
+      limit: 10,
+    });
+    expect(due.map((row) => row.id)).toEqual(
+      expect.arrayContaining(["never", "stale"]),
+    );
+    expect(due).toHaveLength(2);
+
+    const capped = await DriftRepository.getDueBaselines({
+      cutoffIso: "2026-09-15T00:00:00.000Z",
+      limit: 1,
+    });
+    expect(capped).toHaveLength(1);
   });
 });

@@ -351,6 +351,13 @@
       "when": 1790596410206,
       "tag": "0049_fixed_random",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1791050391670,
+      "tag": "0050_daily_domino",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,9 @@ import { DriftService } from "./DriftService";
 
 const mocks = vi.hoisted(() => ({
   createBaseline: vi.fn(),
+  listBaselines: vi.fn(),
+  getDueBaselines: vi.fn(),
+  touchBaselineCompared: vi.fn(),
   getBaseline: vi.fn(),
   insertSnapshots: vi.fn(),
   getSnapshotsForBaseline: vi.fn(),

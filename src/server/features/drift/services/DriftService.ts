@@ -12,6 +12,11 @@ import type { DriftAttributes, DriftDiff } from "../types";
 const DEFAULT_HISTORY_LIMIT = 20;
 const MAX_HISTORY_LIMIT = 200;
 
+// Scheduled comparison cadence + per-tick cap. Comparisons are free (plain
+// fetches, no DataForSEO), so the cap bounds tick duration, not spend.
+const SCHEDULED_COMPARE_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+const SCHEDULED_COMPARE_LIMIT = 5;
+
 /**
  * Capture the SEO attributes of every URL and store them as a new baseline
  * (drift_baseline.py port). URLs are validated up front — one rejected URL
@@ -126,6 +131,10 @@ async function compareBaseline(input: {
   }));
   await DriftRepository.insertChanges(rows);
   await DriftRepository.resolveChanges(resolveIds, now);
+  await DriftRepository.touchBaselineCompared({
+    baselineId: baseline.id,
+    comparedAt: now,
+  });
 
   return {
     baselineId: baseline.id,
@@ -297,4 +306,47 @@ export const DriftService = {
   compareBaseline,
   getHistory,
   getChanges,
+  listBaselines,
+  runScheduledComparisons,
 } as const;
+
+async function listBaselines(input: { projectId: string }) {
+  return DriftRepository.listBaselines({ projectId: input.projectId });
+}
+
+/**
+ * Cron body for the `scheduled` Worker handler: compare every baseline due
+ * for its weekly run. Per-baseline try/catch — one dead site must not skip
+ * the rest of the tick. Overdue baselines stay due and resume next tick.
+ */
+async function runScheduledComparisons(): Promise<{
+  compared: number;
+  failed: number;
+}> {
+  const cutoffIso = new Date(
+    Date.now() - SCHEDULED_COMPARE_INTERVAL_MS,
+  ).toISOString();
+  const due = await DriftRepository.getDueBaselines({
+    cutoffIso,
+    limit: SCHEDULED_COMPARE_LIMIT,
+  });
+
+  let compared = 0;
+  let failed = 0;
+  for (const baseline of due) {
+    try {
+      await compareBaseline({
+        projectId: baseline.projectId,
+        baselineId: baseline.id,
+      });
+      compared += 1;
+    } catch (error) {
+      failed += 1;
+      console.error(
+        `[cron] drift compare failed for baseline ${baseline.id}:`,
+        error,
+      );
+    }
+  }
+  return { compared, failed };
+}

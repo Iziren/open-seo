@@ -1,0 +1,1 @@
+ALTER TABLE "seo_drift_baselines" ADD COLUMN "last_compared_at" text;

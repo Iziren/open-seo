@@ -54,6 +54,7 @@ import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_pro
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
 import { Route as ProjectPProjectIdPageAuditRouteImport } from './routes/_project/p/$projectId/page-audit'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
+import { Route as ProjectPProjectIdDriftRouteImport } from './routes/_project/p/$projectId/drift'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdContextRouteImport } from './routes/_project/p/$projectId/context'
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
@@ -300,6 +301,11 @@ const ProjectPProjectIdKeywordsRoute =
     path: '/keywords',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdDriftRoute = ProjectPProjectIdDriftRouteImport.update({
+  id: '/drift',
+  path: '/drift',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
 const ProjectPProjectIdDomainRoute = ProjectPProjectIdDomainRouteImport.update({
   id: '/domain',
   path: '/domain',
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/context': typeof ProjectPProjectIdContextRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/drift': typeof ProjectPProjectIdDriftRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/page-audit': typeof ProjectPProjectIdPageAuditRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
@@ -480,6 +487,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/context': typeof ProjectPProjectIdContextRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/drift': typeof ProjectPProjectIdDriftRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/page-audit': typeof ProjectPProjectIdPageAuditRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/_project/p/$projectId/context': typeof ProjectPProjectIdContextRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/_project/p/$projectId/drift': typeof ProjectPProjectIdDriftRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/_project/p/$projectId/page-audit': typeof ProjectPProjectIdPageAuditRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
@@ -601,6 +610,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
+    | '/p/$projectId/drift'
     | '/p/$projectId/keywords'
     | '/p/$projectId/page-audit'
     | '/p/$projectId/prompt-explorer'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
+    | '/p/$projectId/drift'
     | '/p/$projectId/keywords'
     | '/p/$projectId/page-audit'
     | '/p/$projectId/prompt-explorer'
@@ -716,6 +727,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/brand-lookup'
     | '/_project/p/$projectId/context'
     | '/_project/p/$projectId/domain'
+    | '/_project/p/$projectId/drift'
     | '/_project/p/$projectId/keywords'
     | '/_project/p/$projectId/page-audit'
     | '/_project/p/$projectId/prompt-explorer'
@@ -1078,6 +1090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdKeywordsRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/drift': {
+      id: '/_project/p/$projectId/drift'
+      path: '/drift'
+      fullPath: '/p/$projectId/drift'
+      preLoaderRoute: typeof ProjectPProjectIdDriftRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/domain': {
       id: '/_project/p/$projectId/domain'
       path: '/domain'
@@ -1289,6 +1308,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
   ProjectPProjectIdContextRoute: typeof ProjectPProjectIdContextRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
+  ProjectPProjectIdDriftRoute: typeof ProjectPProjectIdDriftRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
   ProjectPProjectIdPageAuditRoute: typeof ProjectPProjectIdPageAuditRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
@@ -1310,6 +1330,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
     ProjectPProjectIdContextRoute: ProjectPProjectIdContextRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
+    ProjectPProjectIdDriftRoute: ProjectPProjectIdDriftRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
     ProjectPProjectIdPageAuditRoute: ProjectPProjectIdPageAuditRoute,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,

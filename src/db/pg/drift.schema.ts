@@ -23,6 +23,9 @@ export const seoDriftBaselines = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     createdAt: timestampColumn("created_at"),
+    // Null until the first comparison runs; the weekly cron treats
+    // never-compared baselines as due.
+    lastComparedAt: text("last_compared_at"),
   },
   (table) => [index("seo_drift_baselines_project_id_idx").on(table.projectId)],
 );

@@ -26,6 +26,11 @@ import { getPageAuditTool } from "@/server/mcp/tools/get-page-audit";
 import { getContentQualityTool } from "@/server/mcp/tools/get-content-quality";
 import { generateSchemaTool } from "@/server/mcp/tools/generate-schema";
 import { getSchemaTool } from "@/server/mcp/tools/get-schema";
+import {
+  captureDriftBaselineTool,
+  compareDriftBaselineTool,
+  getDriftChangesTool,
+} from "@/server/mcp/tools/drift-tools";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import { removeSavedKeywordsTool } from "@/server/mcp/tools/remove-saved-keywords";
 import { buildUpdateProjectContextTool } from "@/server/mcp/tools/project-context";
@@ -434,5 +439,8 @@ export function buildSamMcpTools(
     get_content_quality: adaptTool(getContentQualityTool),
     generate_schema: adaptTool(generateSchemaTool),
     get_schema: adaptTool(getSchemaTool),
+    capture_drift_baseline: adaptTool(captureDriftBaselineTool),
+    compare_drift: adaptTool(compareDriftBaselineTool),
+    get_drift_changes: adaptTool(getDriftChangesTool),
   };
 }

@@ -7,6 +7,7 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import { DriftService } from "@/server/features/drift/services/DriftService";
 import { reconcileStaleAudits } from "@/server/features/audit/services/auditReconciler";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -230,6 +231,14 @@ export default {
     }
     // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
     await withPgClient(() => runScheduledRankChecks(env));
+    // Weekly drift comparisons ride the same tick: due baselines (never
+    // compared or stale over a week) re-check, capped per tick. Failures are
+    // logged per baseline inside the service and never fail the tick.
+    try {
+      await withPgClient(() => DriftService.runScheduledComparisons());
+    } catch (err) {
+      console.error("[cron] Scheduled drift comparisons failed:", err);
+    }
     if (watchdogError) throw watchdogError;
   },
 };
