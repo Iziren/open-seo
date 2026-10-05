@@ -1,11 +1,29 @@
 import { AppError } from "@/server/lib/errors";
 
-const BLOCKED_HOSTS = new Set([
-  "localhost",
+// Cloud instance metadata endpoints. Never allowlistable via
+// SEO_LOCAL_TARGETS: a successful hit exfiltrates cloud credentials.
+const UNALLOWLISTABLE_HOSTS = new Set([
   "metadata.google.internal",
+  "metadata.goog",
   "metadata",
+  "metadata.azure.com",
+  "metadata.ec2.internal",
+  "metadata.oraclecloud.com",
   "169.254.169.254",
+  "fd00:ec2::254",
   "100.100.100.200",
+  "0.0.0.0",
+]);
+
+// Loopback and internal hostnames. Blocked by default; bypassable per
+// host[:port] through SEO_LOCAL_TARGETS (local dev, self-hosted targets).
+const BLOCKED_HOSTS = new Set([
+  ...UNALLOWLISTABLE_HOSTS,
+  "localhost",
+  "ip6-localhost",
+  "ip6-loopback",
+  "127.0.0.1",
+  "::1",
 ]);
 
 const BLOCKED_HOST_SUFFIXES = [
@@ -16,9 +34,51 @@ const BLOCKED_HOST_SUFFIXES = [
   ".home.arpa",
 ];
 
+// Regex matching IPv4 obfuscation forms: decimal integer, hex, octal,
+// dotted with leading zeros, dotted octal, dotted hex, short forms.
+const IPV4_OBFUSCATED_RE =
+  /^(?:0x[0-9a-f]+|0[0-7]+|[0-9]+)(?:\.(?:0x[0-9a-f]+|0[0-7]+|[0-9]+)){0,3}$/i;
+
+function parseLocalTargets(): Array<{ host: string; port: number | null }> {
+  const raw = process.env.SEO_LOCAL_TARGETS ?? "";
+  if (!raw.trim()) return [];
+  return raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      let host: string;
+      let port: number | null = null;
+      if (entry.includes(":") && !entry.startsWith("[")) {
+        const lastColon = entry.lastIndexOf(":");
+        const maybePort = entry.slice(lastColon + 1);
+        if (/^\d+$/.test(maybePort)) {
+          host = entry.slice(0, lastColon);
+          port = Number(maybePort);
+        } else {
+          host = entry;
+        }
+      } else {
+        host = entry;
+      }
+      host = normalizeHost(host);
+      if (!host) return null;
+      return { host, port };
+    })
+    .filter((x): x is { host: string; port: number | null } => x !== null);
+}
+
+function isAllowlistedLocalTarget(host: string, port: number | null): boolean {
+  for (const entry of parseLocalTargets()) {
+    if (entry.host !== host) continue;
+    if (entry.port === null || entry.port === port) return true;
+  }
+  return false;
+}
+
 const DOH_ENDPOINT = "https://cloudflare-dns.com/dns-query";
 
-function normalizeHost(hostname: string): string {
+export function normalizeHost(hostname: string): string {
   let host = hostname.toLowerCase().trim();
   if (host.startsWith("[") && host.endsWith("]")) {
     host = host.slice(1, -1);
@@ -29,7 +89,47 @@ function normalizeHost(hostname: string): string {
   if (host.endsWith(".")) {
     host = host.slice(0, -1);
   }
+  if (IPV4_OBFUSCATED_RE.test(host)) {
+    const canonical = canonicalizeObfuscatedIpv4(host);
+    if (canonical) host = canonical;
+  }
   return host;
+}
+
+function intToIpv4(num: number): string {
+  return [
+    (num >>> 24) & 0xff,
+    (num >>> 16) & 0xff,
+    (num >>> 8) & 0xff,
+    num & 0xff,
+  ].join(".");
+}
+
+export function canonicalizeObfuscatedIpv4(input: string): string | null {
+  try {
+    let single: number | null = null;
+    if (/^0x[0-9a-f]+$/i.test(input)) single = parseInt(input, 16);
+    else if (/^0[0-7]+$/.test(input)) single = parseInt(input, 8);
+    else if (/^\d+$/.test(input)) single = Number(input);
+
+    if (single !== null) {
+      if (single < 0 || single > 0xffffffff) return null;
+      return intToIpv4(single);
+    }
+
+    const parts = input.split(".");
+    if (parts.length < 2 || parts.length > 4) return null;
+    const nums = parts.map((p) => {
+      if (/^0x[0-9a-f]+$/i.test(p)) return parseInt(p, 16);
+      if (/^0[0-7]+$/.test(p)) return parseInt(p, 8);
+      return parseInt(p, 10);
+    });
+    if (nums.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+    while (nums.length < 4) nums.push(0);
+    return nums.slice(0, 4).join(".");
+  } catch {
+    return null;
+  }
 }
 
 function isPrivateIpv4(host: string): boolean {
@@ -203,7 +303,16 @@ export function isCrawlableUrl(url: string): boolean {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     return false;
   }
-  return !isBlockedHost(parsed.hostname);
+  const host = normalizeHost(parsed.hostname);
+  if (UNALLOWLISTABLE_HOSTS.has(host)) return false;
+  return (
+    !isBlockedHost(host) || isAllowlistedLocalTarget(host, getUrlPort(parsed))
+  );
+}
+
+function getUrlPort(parsed: URL): number | null {
+  if (parsed.port) return Number(parsed.port);
+  return parsed.protocol === "https:" ? 443 : 80;
 }
 
 export async function normalizeAndValidateStartUrl(
@@ -227,11 +336,19 @@ export async function normalizeAndValidateStartUrl(
     throw new AppError("VALIDATION_ERROR");
   }
 
-  if (isBlockedHost(parsed.hostname)) {
+  const host = normalizeHost(parsed.hostname);
+  const port = getUrlPort(parsed);
+  const allowlisted = isAllowlistedLocalTarget(host, port);
+
+  if (UNALLOWLISTABLE_HOSTS.has(host)) {
     throw new AppError("CRAWL_TARGET_BLOCKED");
   }
 
-  if (await hostnameResolvesToBlockedAddress(parsed.hostname)) {
+  if (isBlockedHost(host) && !allowlisted) {
+    throw new AppError("CRAWL_TARGET_BLOCKED");
+  }
+
+  if (!allowlisted && (await hostnameResolvesToBlockedAddress(host))) {
     throw new AppError("CRAWL_TARGET_BLOCKED");
   }
 
