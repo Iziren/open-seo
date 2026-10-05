@@ -3,9 +3,19 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
+import {
+  PAGE_FETCH_TIMEOUT_MS,
+  resolvePageContent,
+} from "@/server/lib/audit/render-page";
 
 const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
 const MAX_HTML_BYTES = 1024 * 1024;
+/**
+ * Redirect chains stop after this many hops (fetch_page.py's
+ * `max_redirects=5`): the next 3xx records as an error row with no
+ * redirectUrl, so the frontier stops following loops instead of cycling.
+ */
+const MAX_REDIRECT_HOPS = 5;
 
 /**
  * Markers of a bot-mitigation challenge page. We classify these honestly as
@@ -77,7 +87,7 @@ async function fetchPage(url: string, throttle: CrawlThrottle) {
         Accept: "text/html,application/xhtml+xml",
       },
       redirect: "manual",
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(PAGE_FETCH_TIMEOUT_MS),
     });
     const result = {
       response,
@@ -101,13 +111,18 @@ async function fetchPage(url: string, throttle: CrawlThrottle) {
   }
 }
 
-/** Null leaves this URL deferred when the shared cooldown stops its fetch. */
+/**
+ * Null leaves this URL deferred when the shared cooldown stops its fetch.
+ * `redirectHops` counts redirects already followed to reach this URL; the
+ * optional `spaShell` flag rides the in-memory result only (not persisted).
+ */
 export async function crawlPage(
   url: string,
   crawlDepth: number | null,
   inSitemap: boolean,
   throttle: CrawlThrottle,
-): Promise<CrawledPageResult | null> {
+  redirectHops = 0,
+): Promise<(CrawledPageResult & { spaShell?: boolean }) | null> {
   const startTime = Date.now();
 
   try {
@@ -124,11 +139,12 @@ export async function crawlPage(
     if (statusCode >= 300 && statusCode < 400) {
       const location = response.headers.get("location");
       const redirectUrl = location ? normalizeUrl(location, url) : null;
+      const capped = redirectUrl !== null && redirectHops >= MAX_REDIRECT_HOPS;
       return emptyPageResult({
         url,
         statusCode,
-        fetchClass: "ok",
-        redirectUrl,
+        fetchClass: capped ? "error" : "ok",
+        redirectUrl: capped ? null : redirectUrl,
         responseTimeMs,
         xRobotsTag,
         headerCanonicalUrl,
@@ -167,12 +183,35 @@ export async function crawlPage(
       });
     }
 
+    // Pick the body the analysis reads: a JS app shell is re-fetched once as
+    // Googlebot first (see render-page.ts). The probe waits on the same
+    // throttle as raw fetches; if the chunk budget is gone it defers the whole
+    // URL so the shell is never analyzed without its probe.
+    let probeDeferred = false;
+    const resolved = await resolvePageContent({
+      url,
+      rawHtml: body,
+      fetch: async (probeUrl, init) => {
+        if (!(await throttle.ready())) {
+          probeDeferred = true;
+          throw new Error("crawl throttle paused the Googlebot probe");
+        }
+        return fetch(probeUrl, init);
+      },
+    });
+    if (probeDeferred) return null;
+
     // Dynamic import keeps the HTML parser out of the worker's startup
     // module graph: SiteAuditWorkflow is re-exported from src/server.ts, so
     // a static import would evaluate it in every isolate's baseline heap,
     // not just when an audit actually crawls.
     const { analyzeHtml } = await import("@/server/lib/audit/page-analyzer");
-    const analysis = analyzeHtml(body, url, statusCode, responseTimeMs);
+    const analysis = analyzeHtml(
+      resolved.html,
+      url,
+      statusCode,
+      responseTimeMs,
+    );
     const robotsDirectives = [analysis.robotsMeta, xRobotsTag]
       .filter(Boolean)
       .join(",")
@@ -213,7 +252,8 @@ export async function crawlPage(
         ? await sha256Hex(analysis.bodyText)
         : null,
       isHtml: true,
-      htmlBytes: body.length,
+      htmlBytes: resolved.html.length,
+      spaShell: resolved.spaShell,
       rateLimited,
       imagesTotal: analysis.images.length,
       // Only a truly absent alt attribute counts: alt="" is the correct
