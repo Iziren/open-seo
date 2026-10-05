@@ -230,8 +230,10 @@ function KeywordResearchContent({
   }
 
   if (controller.researchError) {
-    const isCreditsError =
-      getErrorCode(controller.researchMutationError) === "INSUFFICIENT_CREDITS";
+    const errorCode = getErrorCode(controller.researchMutationError);
+    const isCreditsError = errorCode === "INSUFFICIENT_CREDITS";
+    // A refused estimate means fewer keywords per request, not more credits.
+    const isCapError = errorCode === "SPEND_CAP_EXCEEDED";
 
     return (
       <div className="flex-1 flex items-center justify-center pt-1">
@@ -240,6 +242,11 @@ function KeywordResearchContent({
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <p className="text-sm">{controller.researchError}</p>
           </div>
+          {isCapError ? (
+            <p className="text-xs">
+              Try fewer seed keywords per request and run again.
+            </p>
+          ) : null}
           {isCreditsError ? (
             <Link to={BILLING_ROUTE} className="btn btn-sm">
               Go to Billing

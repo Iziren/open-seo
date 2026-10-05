@@ -1,5 +1,6 @@
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import { normalizeIntent } from "@/server/features/keywords/services/research/helpers";
+import { assertSpendAllowed, getSpendPolicy } from "@/server/billing/spendCaps";
 import {
   createDataforseoClient,
   fetchKeywordMetricsForList,
@@ -21,6 +22,18 @@ export async function refreshSavedKeywordMetrics(
   });
 
   if (rows.length === 0) return { updated: 0 };
+
+  // Pre-flight spend gate on the bulk size: a project with thousands of
+  // saved keywords turns one refresh into significant DataForSEO spend.
+  assertSpendAllowed(
+    rows.length * getSpendPolicy().keywordMetricsPerKeywordUsd,
+    {
+      organizationId: billingCustomer.organizationId,
+      userId: billingCustomer.userId,
+      projectId: billingCustomer.projectId,
+      feature: "keyword_metrics_refresh",
+    },
+  );
 
   const client = createDataforseoClient(billingCustomer);
   let updated = 0;

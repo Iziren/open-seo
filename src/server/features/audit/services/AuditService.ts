@@ -14,6 +14,10 @@ import {
   getEstimatedAuditCapacity,
   type AuditLimitTier,
 } from "@/server/features/audit/services/audit-capacity";
+import {
+  assertSpendAllowed,
+  estimateAuditLighthouseCost,
+} from "@/server/billing/spendCaps";
 import { AppError } from "@/server/lib/errors";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import {
@@ -69,6 +73,21 @@ async function startAudit(input: {
     maxPages,
     lighthouseStrategy,
   });
+
+  // Pre-flight spend gate: Lighthouse pages are the only paid part of an
+  // audit (crawl + analysis are free fetches + CPU). Refuse before writing
+  // any rows so a denied audit leaves no residue to reconcile.
+  if (reservation.lighthouseTotal > 0) {
+    assertSpendAllowed(
+      estimateAuditLighthouseCost(reservation.lighthouseTotal),
+      {
+        organizationId: input.billingCustomer.organizationId,
+        userId: input.actorUserId,
+        projectId: input.projectId,
+        feature: "site_audit_lighthouse",
+      },
+    );
+  }
 
   const auditId = crypto.randomUUID();
   const config: AuditConfig = { maxPages, lighthouseStrategy };

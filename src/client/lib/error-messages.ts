@@ -9,6 +9,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "An active hosted subscription is required before you can use OpenSEO.",
   INSUFFICIENT_CREDITS:
     "You've run out of credits. Add more credits or upgrade your plan to continue.",
+  SPEND_CAP_EXCEEDED:
+    "This request exceeds the per-call spend limit. Narrow it down and try again.",
   FORBIDDEN: "You do not have access to this resource.",
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:

@@ -9,6 +9,7 @@ import {
   getRequiredEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
+import { getSpendPolicy } from "@/server/billing/spendCaps";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 
 const AUTUMN_EVENTS_LIST_URL = "https://api.useautumn.com/v1/events.list";
@@ -139,3 +140,15 @@ async function fetchAutumnEventsPage(args: {
     })),
   };
 }
+
+/**
+ * Platform spend policy for the billing settings page: caps and kill-switch
+ * state (numbers only, no secrets). Operators set these via env; the monthly
+ * ceiling is enforced through the Autumn credit allocation.
+ */
+export const getSpendPolicyState = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(z.object({}))
+  .handler(async () => {
+    return getSpendPolicy();
+  });

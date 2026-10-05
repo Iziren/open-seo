@@ -1,4 +1,5 @@
 import { AppError } from "@/server/lib/errors";
+import { assertSpendAllowed, getSpendPolicy } from "@/server/billing/spendCaps";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import {
@@ -297,6 +298,16 @@ export async function research(
   if (uniqueKeywords.length === 0) {
     throw new AppError("VALIDATION_ERROR");
   }
+
+  // Pre-flight spend gate on the flat per-call upper bound. Cache hits
+  // below still pass through the gate — over-gating a free call is the
+  // safe direction for a platform-paid meter.
+  assertSpendAllowed(getSpendPolicy().keywordResearchPerCallUsd, {
+    organizationId: billingCustomer.organizationId,
+    userId: billingCustomer.userId,
+    projectId: billingCustomer.projectId,
+    feature: "keyword_research",
+  });
 
   const seedKeyword = uniqueKeywords[0];
   const provider = getKeywordDataProvider(input.locationCode);

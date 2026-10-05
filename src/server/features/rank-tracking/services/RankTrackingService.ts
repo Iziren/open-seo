@@ -26,6 +26,7 @@ import {
   MAX_CONFIGS_PER_PROJECT,
   rankCheckCostApprovalError,
 } from "@/shared/rank-tracking";
+import { assertSpendAllowed } from "@/server/billing/spendCaps";
 import {
   getIsoCountryCode,
   resolveKeywordDataLanguage,
@@ -244,6 +245,22 @@ async function triggerCheck(input: {
       );
     }
   }
+
+  // Pre-flight spend gate on the exact live estimate (the user-approval
+  // ceiling above is separate and optional). Scheduled runs go through the
+  // workflow's own queued-pricing gate; this covers manual triggers.
+  const { costUsd } = estimateRankCheckCredits(
+    keywords.length,
+    config.devices,
+    config.serpDepth,
+    "live",
+  );
+  assertSpendAllowed(costUsd, {
+    organizationId: input.billingCustomer.organizationId,
+    userId: input.billingCustomer.userId,
+    projectId: input.projectId,
+    feature: "rank_check",
+  });
 
   return beginRankCheckRun({
     workflow: env.RANK_CHECK_WORKFLOW,

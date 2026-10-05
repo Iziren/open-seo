@@ -8,6 +8,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { buildCheckoutSuccessUrl } from "@/client/features/billing/checkout-url";
 import { BillingUsageChart } from "@/client/features/billing/BillingUsageChart";
+import { SpendCapBanner } from "@/client/features/billing/SpendCapBanner";
 import { BillingFeatureBreakdown } from "@/client/features/billing/BillingFeatureBreakdown";
 import { parseTopUpAmount } from "@/client/features/billing/HostedBillingContentUtils";
 import { getBillingRouteState } from "@/client/features/billing/route-state";
@@ -305,6 +306,7 @@ function BillingPage() {
       </div>
 
       {/* Usage chart */}
+      <SpendCapBanner />
       <BillingUsageChart />
 
       {/* Per-feature usage breakdown */}
