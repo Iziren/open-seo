@@ -12,6 +12,7 @@ import {
   resolveIssueSeverity,
 } from "@/client/features/audit/results/IssuesView";
 import { PagesTable } from "@/client/features/audit/results/PagesTable";
+import { HealthScoreHeader } from "@/client/features/audit/results/HealthScoreHeader";
 import {
   ExportDropdown,
   PerformanceTable,
@@ -92,6 +93,11 @@ export function ResultsView({
           allow the "OpenSEO-Audit" crawler.
         </CrawlWarning>
       )}
+
+      <HealthScoreHeader
+        score={audit.healthScore}
+        breakdown={audit.scoreBreakdown}
+      />
 
       <StatsStrip
         pagesCrawled={audit.pagesCrawled}
