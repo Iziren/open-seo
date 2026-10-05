@@ -4,6 +4,7 @@ import * as sqliteProjectContext from "./project-context.schema";
 import * as sqliteReports from "./reports.schema";
 import * as sqliteReportTemplates from "./report-templates.schema";
 import * as sqliteAudit from "./audit.schema";
+import * as sqliteDrift from "./drift.schema";
 import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
@@ -15,6 +16,7 @@ import * as pgProjectContext from "./pg/project-context.schema";
 import * as pgReports from "./pg/reports.schema";
 import * as pgReportTemplates from "./pg/report-templates.schema";
 import * as pgAudit from "./pg/audit.schema";
+import * as pgDrift from "./pg/drift.schema";
 import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
@@ -37,6 +39,7 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteReports &
   typeof sqliteReportTemplates &
   typeof sqliteAudit &
+  typeof sqliteDrift &
   typeof sqliteSam &
   typeof sqliteAuth &
   typeof sqliteBilling &
@@ -52,6 +55,7 @@ const runtimeSchema =
         ...pgReports,
         ...pgReportTemplates,
         ...pgAudit,
+        ...pgDrift,
         ...pgSam,
         ...pgAuth,
         ...pgBilling,
@@ -65,6 +69,7 @@ const runtimeSchema =
         ...sqliteReports,
         ...sqliteReportTemplates,
         ...sqliteAudit,
+        ...sqliteDrift,
         ...sqliteSam,
         ...sqliteAuth,
         ...sqliteBilling,
@@ -101,6 +106,9 @@ export const {
   auditPages,
   auditIssues,
   auditLighthouseResults,
+  seoDriftBaselines,
+  seoDriftSnapshots,
+  seoDriftChanges,
   samSessions,
   user,
   session,

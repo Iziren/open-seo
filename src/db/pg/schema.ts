@@ -3,6 +3,7 @@ export * from "./project-context.schema";
 export * from "./reports.schema";
 export * from "./report-templates.schema";
 export * from "./audit.schema";
+export * from "./drift.schema";
 export * from "./sam.schema";
 export * from "./better-auth-schema";
 export * from "./billing.schema";
