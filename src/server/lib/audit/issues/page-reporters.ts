@@ -39,7 +39,11 @@ function hasHeadingLevelSkip(headingOrder: number[]): boolean {
   return false;
 }
 
-export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
+export function runPageReporters(
+  // `spaShell` is set by crawlPage when even the Googlebot re-fetch returned a
+  // JS app shell; it is intentionally not persisted with the page row.
+  page: CrawledPageResult & { spaShell?: boolean },
+): DetectedIssue[] {
   const issues: DetectedIssue[] = [];
   const report = (
     issueType: AuditIssueType,
@@ -136,6 +140,11 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   }
 
   // Content quality
+  // A surviving app shell is the root cause of the thin page below; report it
+  // explicitly so the page is not written off as merely thin content.
+  if (page.spaShell) {
+    report("spa-shell", { wordCount: page.wordCount });
+  }
   if (page.isIndexable && page.wordCount < THIN_CONTENT_WORDS) {
     report("thin-content", { wordCount: page.wordCount });
   }

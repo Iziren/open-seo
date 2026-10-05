@@ -152,6 +152,14 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Either expand the page with genuinely useful content, noindex it, or consolidate it into a stronger page. If the content exists but is rendered by JavaScript, ensure it is server-rendered or pre-rendered.",
   },
+  "spa-shell": {
+    severity: "warning",
+    title: "JavaScript app shell",
+    explanation:
+      'The HTML served for this page is a client-side application shell — a mount element such as <div id="root"> plus a script bundle, with essentially no server-rendered text in the response. Search engines that do not run JavaScript see an empty document, so the page\'s real content (if any) never reaches the index and the page reads as empty or thin.',
+    howToFix:
+      "Serve the page's main content and links in the initial HTML (server-side rendering, static generation, or a prerendering service). Verify with view-source or curl: the primary text should be present before any JavaScript runs.",
+  },
   "images-missing-alt": {
     severity: "warning",
     title: "Images missing alt text",

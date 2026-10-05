@@ -114,6 +114,9 @@ export async function runCrawlPhase(
   // exceededMemory death every ~200 pages.
   let windowHint = CRAWL_WINDOW.initial;
   let throttleState: CrawlThrottleState | undefined;
+  // Redirect-chain depth per URL, rebuilt from each chunk's step result (like
+  // windowHint) so a chain spanning chunks keeps counting toward the cap.
+  const redirectHops = new Map<string, number>();
 
   while (pending > 0 && attemptedTotal < params.maxPages) {
     chunkNo += 1;
@@ -128,6 +131,7 @@ export async function runCrawlPhase(
           attemptedBefore: attemptedTotal,
           startWindow: windowHint,
           throttleState,
+          redirectHops,
         }),
     );
     // Apply the chunk's counters even when it did no new work (a retried
@@ -146,6 +150,11 @@ export async function runCrawlPhase(
     // step results from before endWindow existed.
     windowHint = result.endWindow ?? CRAWL_WINDOW.initial;
     throttleState = result.throttleState;
+    // `?? []`: cached results predating this field replay with no targets,
+    // so a chain crossing that boundary restarts its count at zero.
+    for (const target of result.redirectTargets ?? []) {
+      redirectHops.set(target.url, target.hops);
+    }
     if (pending > 0 && attemptedTotal < params.maxPages && result.resumeAt) {
       // The timestamp comes from the persisted chunk result. Always replay
       // the same sleep step, even when that timestamp is now in the past.
@@ -170,6 +179,8 @@ async function runCrawlChunk(
     attemptedBefore: number;
     startWindow: number;
     throttleState?: CrawlThrottleState;
+    /** Redirects already followed to reach each claimed URL (see crawlPage). */
+    redirectHops: ReadonlyMap<string, number>;
   },
 ): Promise<{
   attemptedInChunk: number;
@@ -179,6 +190,7 @@ async function runCrawlChunk(
   rateLimited?: boolean;
   throttleState?: CrawlThrottleState;
   resumeAt?: number;
+  redirectTargets?: Array<{ url: string; hops: number }>;
 }> {
   const { auditId, workflowInstanceId, origin, maxPages, robots, chunkNo } =
     input;
@@ -248,6 +260,7 @@ async function runCrawlChunk(
   let attemptedInChunk = 0;
   const inFlight = new Set<Promise<void>>();
   const deferred: string[] = [];
+  const redirectTargets: Array<{ url: string; hops: number }> = [];
   let persistThreshold = FIRST_PERSIST_BATCH_SIZE;
   let batch: CrawledPageResult[] = [];
   // Persistence runs concurrently with fetching (pipelined) but sequentially
@@ -281,13 +294,28 @@ async function runCrawlChunk(
   };
 
   const launch = (entry: ClaimedUrl) => {
-    const promise = crawlPage(entry.url, entry.depth, entry.inSitemap, throttle)
+    const promise = crawlPage(
+      entry.url,
+      entry.depth,
+      entry.inSitemap,
+      throttle,
+      input.redirectHops.get(entry.url) ?? 0,
+    )
       .then((page) => {
         if (!page) {
           deferred.push(entry.url);
           return;
         }
         attemptedInChunk += 1;
+        // The target is one hop deeper in the chain than this page. Recorded
+        // even when the frontier later skips it (wrong origin, blocked): an
+        // unconsumed entry is harmless, and the cap only needs an upper bound.
+        if (page.redirectUrl) {
+          redirectTargets.push({
+            url: page.redirectUrl,
+            hops: (input.redirectHops.get(page.url) ?? 0) + 1,
+          });
+        }
         batch.push(page);
         if (batch.length >= persistThreshold) flush();
       })
@@ -358,6 +386,7 @@ async function runCrawlChunk(
       throttleState.pausedUntil > Date.now()
         ? throttleState.pausedUntil
         : undefined,
+    redirectTargets,
   };
 }
 

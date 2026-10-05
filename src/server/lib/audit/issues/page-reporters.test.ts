@@ -14,7 +14,9 @@ const HEALTHY_LINK: PageLink = {
   isNofollow: false,
 };
 
-function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
+function makePage(
+  overrides: Partial<CrawledPageResult & { spaShell?: boolean }>,
+): CrawledPageResult & { spaShell?: boolean } {
   return {
     id: "page-1",
     url: "https://example.com/a",
@@ -57,7 +59,9 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
   };
 }
 
-function issueTypes(page: CrawledPageResult): string[] {
+function issueTypes(
+  page: CrawledPageResult & { spaShell?: boolean },
+): string[] {
   return runPageReporters(page).map((issue) => issue.issueType);
 }
 
@@ -187,6 +191,13 @@ describe("runPageReporters", () => {
         makePage({ wordCount: 50, isIndexable: false, robotsMeta: "noindex" }),
       ),
     ).not.toContain("thin-content");
+  });
+
+  it("reports a surviving app shell alongside its thin content", () => {
+    const types = issueTypes(makePage({ spaShell: true, wordCount: 5 }));
+    expect(types).toContain("spa-shell");
+    expect(types).toContain("thin-content");
+    expect(issueTypes(makePage({ wordCount: 500 }))).not.toContain("spa-shell");
   });
 
   it("flags slow responses and deep pages", () => {
