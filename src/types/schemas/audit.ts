@@ -54,6 +54,23 @@ export const gradeContentSchema = z.object({
   url: z.string().min(1, "URL is required").max(2048),
 });
 
+export const generateSchemaInputSchema = z.object({
+  projectId: z.string().min(1),
+  type: z.enum([
+    "Product",
+    "Organization",
+    "Website",
+    "BreadcrumbList",
+    "FAQPage",
+  ]),
+  data: z.record(z.string(), z.unknown()),
+});
+
+export const validateSchemaInputSchema = z.object({
+  projectId: z.string().min(1),
+  document: z.unknown(),
+});
+
 // ─── URL search params schema for /p/$projectId/audit ────────────────────────
 
 const auditTabs = ["issues", "pages", "performance"] as const;

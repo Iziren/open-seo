@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AlertCircle, FileSearch, Loader2, Search } from "lucide-react";
-import { auditPage } from "@/serverFunctions/audit";
+import { auditPage, validateSchema } from "@/serverFunctions/audit";
 import type { PageAuditResult } from "@/server/features/audit/services/PageAuditService";
+import type { SchemaValidationResult } from "@/server/lib/audit/schema-validate";
 import { getIssueDescriptor } from "@/shared/audit-issues";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
@@ -82,7 +83,13 @@ function IssueRow({
   );
 }
 
-function ReportCard({ result }: { result: PageAuditResult }) {
+function ReportCard({
+  result,
+  projectId,
+}: {
+  result: PageAuditResult;
+  projectId: string;
+}) {
   const schemaLabel =
     result.schemaStatus === "valid"
       ? "Valid"
@@ -134,6 +141,20 @@ function ReportCard({ result }: { result: PageAuditResult }) {
               ? result.schemaTypes.join(", ")
               : "No JSON-LD found"}
           </div>
+          {result.schemaFindings.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {result.schemaFindings.slice(0, 5).map((finding) => (
+                <li key={finding.code} className="text-xs">
+                  <span className="font-mono text-base-content/50">
+                    {finding.code}
+                  </span>{" "}
+                  <span className="text-base-content/70">
+                    {finding.message}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <ScoreCard
           label="AI citability"
@@ -210,6 +231,85 @@ function ReportCard({ result }: { result: PageAuditResult }) {
           )}
         </div>
       )}
+      <ValidateSchemaCard projectId={projectId} />
+    </div>
+  );
+}
+
+function ValidateSchemaCard({ projectId }: { projectId: string }) {
+  const [markup, setMarkup] = useState("");
+  const [result, setResult] = useState<SchemaValidationResult | null>(null);
+  const mutation = useMutation({
+    mutationFn: (document: unknown) =>
+      validateSchema({ data: { projectId, document } }),
+    onSuccess: (validation) => setResult(validation),
+  });
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = markup.trim();
+    if (!trimmed) return;
+    try {
+      mutation.mutate(JSON.parse(trimmed) as unknown);
+    } catch {
+      setResult({
+        ok: false,
+        errors: [
+          { code: "not-json", message: "Pasted text is not valid JSON." },
+        ],
+        warnings: [],
+        recommendations: [],
+      });
+    }
+  }
+
+  return (
+    <div className="card bg-base-100 border border-base-200 p-4">
+      <h3 className="font-semibold text-sm">Validate JSON-LD</h3>
+      <p className="mt-1 text-xs text-base-content/60">
+        Paste a JSON-LD document to check it against the e-commerce rules.
+      </p>
+      <form onSubmit={submit} className="mt-2 space-y-2">
+        <textarea
+          value={markup}
+          onChange={(event) => setMarkup(event.target.value)}
+          placeholder='{"@context":"https://schema.org","@type":"Product",…}'
+          rows={4}
+          className="textarea textarea-bordered w-full font-mono text-xs"
+        />
+        <button
+          type="submit"
+          className="btn btn-sm btn-outline"
+          disabled={mutation.isPending || !markup.trim()}
+        >
+          {mutation.isPending ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : null}
+          Validate
+        </button>
+      </form>
+      {mutation.isError && (
+        <p className="mt-2 text-xs text-error">
+          {getStandardErrorMessage(mutation.error)}
+        </p>
+      )}
+      {result && (
+        <div className="mt-2 text-sm">
+          <span
+            className={`badge badge-sm ${result.ok ? "badge-success" : "badge-error"}`}
+          >
+            {result.ok ? "Valid" : "Invalid"}
+          </span>
+          {[...result.errors, ...result.warnings].slice(0, 5).map((finding) => (
+            <p key={finding.code} className="mt-1 text-xs">
+              <span className="font-mono text-base-content/50">
+                {finding.code}
+              </span>{" "}
+              <span className="text-base-content/70">{finding.message}</span>
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -279,7 +379,9 @@ export function PageAuditPage({ projectId, initialUrl, onUrlChange }: Props) {
         </div>
       )}
 
-      {mutation.isSuccess && <ReportCard result={mutation.data} />}
+      {mutation.isSuccess && (
+        <ReportCard result={mutation.data} projectId={projectId} />
+      )}
     </div>
   );
 }

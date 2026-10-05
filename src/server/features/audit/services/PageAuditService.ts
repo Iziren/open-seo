@@ -1,59 +1,5 @@
 import { fetchAnalyzedPage } from "@/server/lib/audit/fetch-analyzed-page";
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-/**
- * Reporter `details` are JSON-safe by construction (strings, numbers,
- * arrays, plain objects), but typed `unknown`. Normalize recursively so
- * the result stays serializable for server-function responses, which reject
- * `unknown` index signatures at the type level.
- */
-function toJsonValue(value: unknown): JsonValue | undefined {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    return Number.isNaN(value) ? null : value;
-  }
-  if (Array.isArray(value)) {
-    const items: JsonValue[] = [];
-    for (const item of value) {
-      const normalized = toJsonValue(item);
-      if (normalized !== undefined) items.push(normalized);
-    }
-    return items;
-  }
-  if (typeof value === "object") {
-    const record: Record<string, JsonValue> = {};
-    for (const [key, entry] of Object.entries(value)) {
-      const normalized = toJsonValue(entry);
-      if (normalized !== undefined) record[key] = normalized;
-    }
-    return record;
-  }
-  return undefined;
-}
-
-/** Normalize a record, guaranteeing an object (never array or scalar). */
-function toJsonRecord(
-  value: Record<string, unknown> | undefined,
-): Record<string, JsonValue> | undefined {
-  if (value === undefined) return undefined;
-  const normalized = toJsonValue(value);
-  return normalized !== null &&
-    typeof normalized === "object" &&
-    !Array.isArray(normalized)
-    ? normalized
-    : undefined;
-}
-
+import { toJsonRecord, type JsonValue } from "@/server/lib/audit/json-value";
 import { enrichPageAnalysis } from "@/server/lib/audit/page-enrichment";
 import { scoreGeoCitability } from "@/server/lib/audit/geo-citability";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
@@ -91,6 +37,7 @@ export interface PageAuditResult {
   contentDetails: PageAuditContentDetail | null;
   schemaStatus: "missing" | "valid" | "invalid";
   schemaTypes: string[];
+  schemaFindings: Array<{ code: string; message: string }>;
   geoScore: number;
   issues: PageAuditIssue[];
 }
@@ -225,6 +172,7 @@ async function auditPage(input: {
     contentDetails,
     schemaStatus: enrichment.schemaStatus,
     schemaTypes: enrichment.schemaTypes,
+    schemaFindings: enrichment.schemaFindings,
     geoScore: geo.score,
     issues,
   };

@@ -4,12 +4,15 @@ import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { ContentQualityService } from "@/server/features/audit/services/ContentQualityService";
 import { PageAuditService } from "@/server/features/audit/services/PageAuditService";
+import { SchemaService } from "@/server/features/audit/services/SchemaService";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   auditPageSchema,
   deleteAuditSchema,
+  generateSchemaInputSchema,
   gradeContentSchema,
+  validateSchemaInputSchema,
   getAuditHistorySchema,
   getAuditResultsSchema,
   getAuditStatusSchema,
@@ -137,4 +140,40 @@ export const gradeContent = createServerFn({ method: "POST" })
     );
 
     return result;
+  });
+
+export const generateSchema = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(generateSchemaInputSchema)
+  .handler(async ({ data, context }) => {
+    const result = await SchemaService.generate({
+      projectId: context.projectId,
+      type: data.type,
+      data: data.data,
+    });
+
+    waitUntil(
+      captureServerEvent({
+        distinctId: context.userId,
+        event: "site_audit:schema-generate",
+        organizationId: context.organizationId,
+        properties: {
+          project_id: context.projectId,
+          schema_type: data.type,
+          valid: result.validation.ok,
+        },
+      }),
+    );
+
+    return result;
+  });
+
+export const validateSchema = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(validateSchemaInputSchema)
+  .handler(async ({ data, context }) => {
+    return SchemaService.validate({
+      projectId: context.projectId,
+      document: data.document,
+    });
   });
