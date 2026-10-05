@@ -39,6 +39,55 @@ function hasHeadingLevelSkip(headingOrder: number[]): boolean {
   return false;
 }
 
+type Report = (
+  issueType: AuditIssueType,
+  details?: Record<string, unknown>,
+) => void;
+
+type ReportablePage = CrawledPageResult & { spaShell?: boolean };
+
+// Content-quality verdicts live here so runPageReporters stays under the
+// complexity budget. Only scaled-content signals (filler/AI-pattern phrasing)
+// escalate to an issue; density/readability/trust findings are scoring inputs,
+// not per-page verdicts — ordinary healthy copy trips them.
+function reportContentIssues(page: ReportablePage, report: Report): void {
+  // A surviving app shell is the root cause of the thin page below; report it
+  // explicitly so the page is not written off as merely thin content.
+  if (page.spaShell) {
+    report("spa-shell", { wordCount: page.wordCount });
+  }
+  if (page.isIndexable && page.wordCount < THIN_CONTENT_WORDS) {
+    report("thin-content", { wordCount: page.wordCount });
+  }
+  if (page.imagesMissingAlt > 0) {
+    report("images-missing-alt", {
+      imagesMissingAlt: page.imagesMissingAlt,
+      imagesTotal: page.imagesTotal,
+    });
+  }
+
+  // Broken JSON-LD earns no rich result; pages without any markup are not
+  // flagged (not every template needs it — a "missing schema" issue would
+  // fire on the entire web).
+  if (page.schemaStatus === "invalid") {
+    report("invalid-structured-data", {
+      schemaTypes: page.schemaTypes ?? [],
+      findings: (page.schemaFindings ?? []).slice(0, 3),
+    });
+  }
+  if (
+    page.isIndexable &&
+    (page.contentFindings ?? []).some(
+      (code) => code === "filler-content" || code === "ai-pattern-signal",
+    )
+  ) {
+    report("low-content-quality", {
+      contentScore: page.contentScore ?? null,
+      findings: page.contentFindings ?? [],
+    });
+  }
+}
+
 export function runPageReporters(
   // `spaShell` is set by crawlPage when even the Googlebot re-fetch returned a
   // JS app shell; it is intentionally not persisted with the page row.
@@ -140,20 +189,7 @@ export function runPageReporters(
   }
 
   // Content quality
-  // A surviving app shell is the root cause of the thin page below; report it
-  // explicitly so the page is not written off as merely thin content.
-  if (page.spaShell) {
-    report("spa-shell", { wordCount: page.wordCount });
-  }
-  if (page.isIndexable && page.wordCount < THIN_CONTENT_WORDS) {
-    report("thin-content", { wordCount: page.wordCount });
-  }
-  if (page.imagesMissingAlt > 0) {
-    report("images-missing-alt", {
-      imagesMissingAlt: page.imagesMissingAlt,
-      imagesTotal: page.imagesTotal,
-    });
-  }
+  reportContentIssues(page, report);
 
   // Structure
   if (page.isIndexable && page.links.length === 0) {

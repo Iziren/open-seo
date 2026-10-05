@@ -168,6 +168,22 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       'Add descriptive alt text to meaningful images; use an empty alt (alt="") only for purely decorative ones.',
   },
+  "invalid-structured-data": {
+    severity: "warning",
+    title: "Invalid structured data",
+    explanation:
+      "The page carries JSON-LD structured data that cannot be parsed, or a Product block that fails merchant-listing validation (missing offers, price, or identifiers). Broken markup earns no rich result and can disqualify the page from product features.",
+    howToFix:
+      "Validate the page with Google's Rich Results Test, fix the JSON syntax it reports, and fill in the required Product fields (name, image, offers with price, priceCurrency, and availability). Re-run the audit to confirm the markup parses.",
+  },
+  "low-content-quality": {
+    severity: "warning",
+    title: "Low content quality",
+    explanation:
+      "The page copy trips the scaled-content signals from Google's quality-rater guidelines: padding phrases with little-to-no value, or phrasing patterns disproportionately common in unedited LLM output. This is an advisory revision prompt, not an authorship verdict — but pages that read as filler rarely earn links, citations, or rankings.",
+    howToFix:
+      "Replace each padding phrase with the specific point you mean, and rewrite flagged spans in your own voice with concrete details from real experience: names, figures, dates, and examples.",
+  },
   "orphan-page": {
     severity: "warning",
     title: "Orphan page",

@@ -47,6 +47,14 @@ let urls: string[];
 beforeEach(async () => {
   // Load the lazy HTML parser before advancing the fake network clock.
   await import("@/server/lib/audit/page-analyzer");
+  // Same for the per-page enrichment modules (dynamically imported by
+  // crawlPage): dynamic import() deadlocks under fake timers, so preload.
+  await Promise.all([
+    import("@/server/lib/audit/content-quality"),
+    import("@/server/lib/audit/schema-extract"),
+    import("@/server/lib/audit/schema-validate"),
+    import("@/server/lib/audit/nlp-analyze"),
+  ]);
   vi.useFakeTimers();
   vi.setSystemTime(0);
   saved = [];

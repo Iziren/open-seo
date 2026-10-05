@@ -103,6 +103,31 @@ export interface LighthouseResult {
   payloadSizeBytes?: number | null;
 }
 
+/** Structured-data verdict for one crawled page. */
+export type PageSchemaStatus = "missing" | "valid" | "invalid";
+
+/** One compact schema finding persisted on the page row. */
+export interface PageSchemaFinding {
+  code: string;
+  message: string;
+}
+
+/**
+ * Compact per-page NLP signals persisted for scoring. Subset of NlpAnalysis
+ * small enough to live on the page row: reading level, the densest term,
+ * and title/H1 topical coverage.
+ */
+export interface NlpSummary {
+  tokenCount: number;
+  readingEase: number;
+  grade: number;
+  topTerm: string | null;
+  topTermDensity: number;
+  overOptimized: boolean;
+  titleCoverage: number;
+  h1Coverage: number;
+}
+
 /**
  * Full result of crawling one page. Persisted to the app DB inside the
  * crawl-chunk step; never accumulated in memory or returned as durable
@@ -161,4 +186,22 @@ export interface CrawledPageResult {
   /** null = not reached via links (e.g. sitemap-seeded). */
   crawlDepth: number | null;
   inSitemap: boolean;
+  /**
+   * 0-100 content-quality composite (see content-quality.ts). Undefined on
+   * rows that never ran the enrichment (redirects, errors, non-HTML).
+   */
+  contentScore?: number | null;
+  /**
+   * Content-quality finding codes driving the low-content-quality reporter.
+   * Transient — resolved into issue rows at crawl time, not persisted.
+   */
+  contentFindings?: string[];
+  /** Structured-data verdict; undefined where the enrichment never ran. */
+  schemaStatus?: PageSchemaStatus | null;
+  /** Deduped JSON-LD @types seen on the page (capped at crawl time). */
+  schemaTypes?: string[];
+  /** Compact validation findings (capped at crawl time). */
+  schemaFindings?: PageSchemaFinding[];
+  /** Compact NLP signals for scoring; null when the text was too short. */
+  nlpSummary?: NlpSummary | null;
 }

@@ -14,6 +14,12 @@ import {
 } from "@/server/lib/audit/url-utils";
 import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import {
+  getIssueTypePageCountsForAudit,
+  getLighthouseScoresForAudit,
+  getPageScoreSignalsForAudit,
+} from "@/server/features/audit/repositories/auditSummaryQueries";
+import { HealthScoreService } from "@/server/features/audit/services/HealthScoreService";
 import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
@@ -370,9 +376,23 @@ async function finalizeAudit(args: {
       auditId,
       "rate_limited",
     );
+    // Score from persisted rows (issues, per-page enrichment, lighthouse),
+    // so the number always reflects what the audit actually recorded.
+    const [issueCounts, pageSignals, lighthouseScores] = await Promise.all([
+      getIssueTypePageCountsForAudit(auditId),
+      getPageScoreSignalsForAudit(auditId),
+      getLighthouseScoresForAudit(auditId),
+    ]);
+    const breakdown = HealthScoreService.compute({
+      issueCounts,
+      pageSignals,
+      lighthouseScores,
+    });
     await AuditRepository.completeAudit(auditId, workflowInstanceId, {
       pagesCrawled: crawl.pagesCrawled,
       pagesTotal: crawl.pagesCrawled,
+      healthScore: breakdown.total,
+      scoreBreakdown: JSON.stringify(breakdown),
     });
     await captureServerEvent({
       distinctId: billingCustomer.userId,

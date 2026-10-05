@@ -45,6 +45,10 @@ export const audits = sqliteTable(
     errorCode: text("error_code"),
     errorDetail: text("error_detail"),
     failedPhase: text("failed_phase"),
+    // 0-100 audit health score + per-category breakdown (see
+    // HealthScoreService). Written once by finalizeAudit; null until then.
+    healthScore: integer("health_score"),
+    scoreBreakdown: text("score_breakdown"),
     startedAt: text("started_at")
       .notNull()
       .default(sql`(current_timestamp)`),
@@ -86,6 +90,9 @@ export const auditPages = sqliteTable(
     headingOrderJson: text("heading_order_json"),
     // Content
     wordCount: integer("word_count").notNull().default(0),
+    // 0-100 content-quality composite (see content-quality.ts); null where
+    // the enrichment never ran (redirects, errors, non-HTML).
+    contentScore: integer("content_score"),
     // Images
     imagesTotal: integer("images_total").notNull().default(0),
     imagesMissingAlt: integer("images_missing_alt").notNull().default(0),
@@ -97,6 +104,16 @@ export const auditPages = sqliteTable(
     hasStructuredData: integer("has_structured_data", { mode: "boolean" })
       .notNull()
       .default(false),
+    // Per-page structured-data verdict + compact findings, so scoring and
+    // the schema reporter read rows instead of re-parsing HTML. JSON payloads
+    // are capped at crawl time, never full JSON-LD documents.
+    schemaStatus: text("schema_status", {
+      enum: ["missing", "valid", "invalid"],
+    }),
+    schemaTypesJson: text("schema_types_json"),
+    schemaFindingsJson: text("schema_findings_json"),
+    // Compact NLP signals (reading level, top term, title/H1 coverage).
+    nlpSummaryJson: text("nlp_summary_json"),
     // Hreflang
     hreflangTagsJson: text("hreflang_tags_json"),
     // Indexability

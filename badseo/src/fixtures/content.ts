@@ -229,6 +229,34 @@ const dupMetaB: Fixture = {
     ),
 };
 
+// 14 — copy stuffed with padding phrases and unedited LLM-style phrasing ----
+const lowContentQuality: Fixture = {
+  path: "/content/low-content-quality",
+  category: CAT,
+  name: "Low content quality",
+  summary:
+    "The copy leans on padding phrases and generic machine-style wording.",
+  lesson:
+    "Filler phrases and stock wording read as low-effort content. Say the specific thing instead.",
+  expectedIssues: ["low-content-quality"],
+  handler: () =>
+    htmlResponse(
+      renderPage({
+        fixture: lowContentQuality,
+        title: "Teapots for slow mornings",
+        metaDescription:
+          "A slow-morning guide to teapots: shapes, spouts, and brewing habits that make a better cup.",
+        bodyHtml: `<h1>Teapots for slow mornings</h1>
+<p class="lede">In today's fast-paced world, the humble teapot still earns its place on the stove. Let's dive in and look at what makes a good one.</p>
+<img src="/img/placeholder.svg" alt="A squat iron teapot pouring tea into a cup" width="720" height="360">
+<h2>When it comes to choosing a pot</h2>
+<p>First and foremost, pick a size that matches how much tea you actually drink. Moreover, check the lid fit, since a loose lid dribbles down the side. Furthermore, look at the spout shape, because a thin spout pours cleanly while a wide one glugs. These small details decide whether the pot delights you each morning or slowly annoys you for years.</p>
+<h2>A tapestry of shapes and spouts</h2>
+<p>Delve into any tea shop and you will see round pots, tall pots, and squat iron ones with enamel inside. Ultimately, the cutting-edge claims on the packaging matter less than balance in the hand and a strainer that catches the leaves. Buy the pot you will reach for daily, not the one with the loudest box.</p>`,
+      }),
+    ),
+};
+
 export const contentFixtures: Fixture[] = [
   thinContent,
   imagesMissingAlt,
@@ -237,4 +265,5 @@ export const contentFixtures: Fixture[] = [
   dupTitleB,
   dupMetaA,
   dupMetaB,
+  lowContentQuality,
 ];

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { z } from "zod";
 import {
   customerHasManagedAccess,
   customerHasPaidPlan,
@@ -6,6 +7,7 @@ import {
   type BillingCustomerContext,
 } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import type { HealthScoreBreakdown } from "@/server/features/audit/services/HealthScoreService";
 import {
   AUDIT_LIMITS,
   clampAuditMaxPages,
@@ -189,11 +191,36 @@ async function getResults(auditId: string, projectId: string) {
       startedAt: audit.startedAt,
       completedAt: audit.completedAt,
       config: parsedConfig,
+      healthScore: audit.healthScore,
+      scoreBreakdown: parseScoreBreakdown(audit.scoreBreakdown),
     },
     pages,
     lighthouse,
     issues,
   };
+}
+
+const scoreBreakdownSchema = z.object({
+  technical: z.number(),
+  content: z.number(),
+  onPage: z.number(),
+  schema: z.number(),
+  perf: z.number(),
+  ai: z.number(),
+  images: z.number(),
+  total: z.number(),
+});
+
+// Breakdowns are written once by finalizeAudit; a row predating the column
+// (or carrying a truncated write) reads back as null, never throws.
+function parseScoreBreakdown(raw: string | null): HealthScoreBreakdown | null {
+  if (!raw) return null;
+  try {
+    const result = scoreBreakdownSchema.safeParse(JSON.parse(raw));
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
 }
 
 async function getHistory(projectId: string) {

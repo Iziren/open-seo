@@ -3,6 +3,7 @@ import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
+import { enrichPageAnalysis } from "@/server/lib/audit/page-enrichment";
 import {
   PAGE_FETCH_TIMEOUT_MS,
   resolvePageContent,
@@ -212,6 +213,7 @@ export async function crawlPage(
       statusCode,
       responseTimeMs,
     );
+    const enrichment = await enrichPageAnalysis(analysis, resolved.html);
     const robotsDirectives = [analysis.robotsMeta, xRobotsTag]
       .filter(Boolean)
       .join(",")
@@ -263,6 +265,12 @@ export async function crawlPage(
       images: analysis.images,
       links: analysis.links,
       hasStructuredData: analysis.hasStructuredData,
+      contentScore: enrichment.contentScore,
+      contentFindings: enrichment.contentFindings,
+      schemaStatus: enrichment.schemaStatus,
+      schemaTypes: enrichment.schemaTypes,
+      schemaFindings: enrichment.schemaFindings,
+      nlpSummary: enrichment.nlpSummary,
       hreflangTags: analysis.hreflangTags,
       isIndexable,
       responseTimeMs,

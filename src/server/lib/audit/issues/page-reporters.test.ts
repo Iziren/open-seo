@@ -219,6 +219,57 @@ describe("runPageReporters", () => {
       "no-outgoing-links",
     );
   });
+
+  it("flags pages whose JSON-LD cannot be parsed or validated", () => {
+    expect(issueTypes(makePage({}))).not.toContain("invalid-structured-data");
+    expect(issueTypes(makePage({ schemaStatus: "missing" }))).not.toContain(
+      "invalid-structured-data",
+    );
+    expect(issueTypes(makePage({ schemaStatus: "valid" }))).not.toContain(
+      "invalid-structured-data",
+    );
+    const invalid = runPageReporters(
+      makePage({
+        schemaStatus: "invalid",
+        schemaTypes: ["Product"],
+        schemaFindings: [{ code: "jsonld-parse-error", message: "bad json" }],
+      }),
+    ).find((issue) => issue.issueType === "invalid-structured-data");
+    expect(invalid?.details).toEqual({
+      schemaTypes: ["Product"],
+      findings: [{ code: "jsonld-parse-error", message: "bad json" }],
+    });
+  });
+
+  it("flags indexable pages tripping scaled-content signals", () => {
+    expect(issueTypes(makePage({}))).not.toContain("low-content-quality");
+    expect(
+      issueTypes(
+        makePage({
+          contentScore: 28,
+          contentFindings: ["filler-content", "ai-pattern-signal"],
+        }),
+      ),
+    ).toContain("low-content-quality");
+    // Density/readability findings are scoring inputs, not page verdicts.
+    expect(
+      issueTypes(
+        makePage({
+          contentScore: 28,
+          contentFindings: ["low-information-density", "hard-to-read"],
+        }),
+      ),
+    ).not.toContain("low-content-quality");
+    // Noindexed pages are out of the ranking game; don't pile on.
+    expect(
+      issueTypes(
+        makePage({
+          isIndexable: false,
+          contentFindings: ["filler-content"],
+        }),
+      ),
+    ).not.toContain("low-content-quality");
+  });
 });
 
 function makeSlimPage(overrides: Partial<SlimPage>): SlimPage {
